@@ -1,0 +1,55 @@
+---
+title: "CLT Project 1: Summary"
+format:
+  html:
+    toc: true
+---
+
+## Executive summary
+
+**Question.** How large must the sample size n be before the sampling distribution of the mean is approximately normal, and is the answer 30?
+
+**Answer.** There is no single number. Under my criteria, the answer ranged from n = 2 to about n = 200, and for the Cauchy there is no n at all. n = 30 was enough for the normal and the die, not enough for the exponential or the small binomial, and never enough for the Cauchy.
+
+I simulated B = 50,000 sample means at 12 sample sizes per population (13 for the Cauchy). A sampling distribution counted as approximately normal when |skewness| < 0.2, |excess kurtosis| < 0.3, the normal Q-Q plot followed the line with no systematic curve, and the simulated SD was within 2% of sigma / sqrt(n). I fixed these criteria before running any simulation.
+
+## Results
+
+| Population | Numeric n | All-four n | Decided by | Skew | Kurt | n = 30? | Key observation |
+|---|---|---|---|---|---|---|---|
+| Normal | 2 | 2 | nothing | -0.008 | 0.048 | Yes | Exactly normal at every n; baseline check on my criteria |
+| Die | 5 | 5 | kurtosis | 0.003 | -0.241 | Yes | Symmetric but light-tailed; only n = 2 fails |
+| Exponential | 100 | 200 | skewness, then Q-Q | 0.137 | -0.009 | No | Strong skew; Q-Q tails still drift at 100 to 150 |
+| Binomial(5, 0.1) | 50 | 200 | skewness, then Q-Q | 0.090 | -0.004 | No | Discrete and skewed; numbers pass 4x earlier than the plots |
+| Cauchy | none | none | infinite variance | n/a | n/a | No | IQR stays near 2 at every n |
+
+"Numeric n" uses skewness, kurtosis, and the SD check. "All-four n" adds the Q-Q plot. Skew and Kurt are measured at the all-four n.
+
+## What I found
+
+**1. What drives the answer is the shape of the population.** The skewness of the sample mean is the population skewness divided by sqrt(n), and the excess kurtosis of the mean is the population value divided by n. The exponential (skewness 2) and the small binomial (skewness 1.19) are skewed, so skewness held them back. The die is symmetric but light-tailed, so kurtosis decided it. The simulations matched these formulas: for the exponential, theory puts the skewness crossing at n = 101 and simulation gave 100; for the binomial, theory gives 36 and my grid located it between 30 and 50; for the die, theory gives 4.23 for kurtosis and my grid located it between 2 and 5.
+
+**2. Numeric summaries and Q-Q plots disagree.** For the exponential, the numeric criteria pass at n = 100, but the Q-Q plot still shows the tails drifting from the line at 100, 125, and 150 and only looks clean by 200. For the binomial, the numbers pass at 50 and the plots at 200. Single-number summaries pass before the tails have settled, which is why I used several kinds of evidence.
+
+**3. The center and spread match theory at every n.** For every population with a finite variance, the simulated SD of the means was within 1% of sigma / sqrt(n) at every tested n, including n = 2. What takes a large n is the shape, not the center or spread.
+
+**4. The Cauchy shows what happens when CLT assumptions fail.** It has no finite mean or variance, so skewness, kurtosis, and sigma / sqrt(n) cannot be used. The IQR of the sample means stayed near 2 for every n from 1 to 300, and the means lined up with a Cauchy Q-Q plot, consistent with the mean of n Cauchy observations being exactly Cauchy. Averaging did not help.
+
+**5. The answer depends on my cutoffs.** By the skewness formula alone, a looser cutoff of 0.5 would put the exponential at about n = 16 and the binomial at about n = 6. My stricter standard is part of why the numbers are larger than the usual n = 30 guideline.
+
+## Is the number 30?
+
+Not as a general rule. Under my criteria, 30 is enough for a symmetric population like the normal or the die, and not enough for a strongly skewed one: the exponential needed about 200, roughly seven times larger. The usual n = 30 guideline is a reasonable approximation only for populations with mild skewness and finite variance, and it fails completely when the variance is infinite.
+
+## Limitations
+
+- My criteria and cutoffs are choices; a different standard gives different numbers.
+- The Q-Q judgments are visual and subjective. I compared against a normal reference to keep them consistent.
+- My grids are coarse in places, so some thresholds are only located in an interval: (150, 200] for the exponential and binomial Q-Q plots, 30 to 50 for the binomial skewness crossing, and 2 to 5 for the die kurtosis crossing.
+- Results come from one project seed, with a reproducibility check on (population): (fill in after the check: did the numbers change, and did the conclusion?).
+
+## Files
+
+- `01_normal.qmd` to `05_cauchy.qmd`: one analysis per population
+- `R/clt_helpers.R`: reusable simulation functions
+- `ai_prompts.md`: record of my AI prompts
