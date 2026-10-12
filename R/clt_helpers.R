@@ -33,3 +33,11 @@ summarize_means <- function(means, n, mu, sigma) {
     excess_kurt = kurt(means)
   )
 }
+
+run_clt <- function(rgen, ns, mu, sigma, B = 10000) {
+  means <- lapply(ns, function(n) simulate_means(rgen, n, B))
+  names(means) <- ns
+  tab <- do.call(rbind, Map(summarize_means, means, ns, mu, sigma))
+  rownames(tab) <- NULL
+  list(means = means, table = tab)
+}
