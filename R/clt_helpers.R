@@ -21,3 +21,15 @@ simulate_means <- function(rgen, n, B = 10000, seed = student_id) {
   replicate(B, mean(rgen(n)))
 }
 
+summarize_means <- function(means, n, mu, sigma) {
+  data.frame(
+    n           = n,
+    sim_mean    = mean(means),
+    theory_mean = mu,
+    sim_sd      = sd(means),
+    theory_se   = sigma / sqrt(n),
+    sd_ratio    = sd(means) / (sigma / sqrt(n)),
+    skew        = skew(means),
+    excess_kurt = kurt(means)
+  )
+}
