@@ -1,0 +1,148 @@
+---
+title: "Cauchy Population"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+source("R/clt_helpers.R")
+```
+
+## 1. The population
+```{r}
+set.seed(student_id)
+x <- rcauchy(10000)
+
+hist(x[abs(x) < 10], breaks = 60, probability = TRUE,
+     col = "skyblue", border = "white",
+     main = "Population: Individual Cauchy Values (shown from -10 to 10)",
+     xlab = "Individual value")
+curve(dcauchy(x), add = TRUE, col = "firebrick", lwd = 2)
+```
+
+```{r}
+data.frame(
+  quantity  = c("Median", "25th percentile", "75th percentile",
+                "Fraction beyond +/-10", "Largest |value| in 10,000 draws"),
+  theory    = c(0, -1, 1, 2 * pcauchy(-10), NA),
+  simulated = round(c(median(x), quantile(x, 0.25), quantile(x, 0.75),
+                      mean(abs(x) > 10), max(abs(x))), 3)
+)
+```
+The Cauchy population is symmetric and bell-shaped around 0, with a sharper peak than a normal, but its tails are far heavier. About 6% of values fall beyond +/-10, where a normal would have essentially none, and the largest absolute value in 10,000 draws was about 3,007. The mean and variance of a Cauchy do not exist, so the table reports the median and quartiles instead (0, -1, 1). The plot above shows only the values between -10 and 10; the extreme values are left out so the shape is visible. This population never changes during the experiment.
+
+## 2. Prediction
+The Cauchy has no finite mean or variance, so the usual CLT does not apply. I predict that no sample size will make the sampling distribution of the mean approximately normal. The mean of n independent standard Cauchy observations is itself standard Cauchy, so I expect the quartiles of the sample means to stay near -1, 0, and 1 at every n, instead of shrinking like 1/sqrt(n) as they would for a normal. I expect the skewness, kurtosis, and the standard error ratio to be meaningless here, because the population moments they compare against do not exist.
+
+## 3. My criterion
+The Cauchy has no finite mean or variance, so three of my four criteria cannot be applied:
+
+- Skewness and excess kurtosis are undefined for the population. The simulated values can be computed, but they are dominated by a few extreme observations and change from run to run, so there is nothing stable to compare against my cutoffs.
+- The standard error check needs sigma, which does not exist.
+
+I use these in their place:
+1. The normal Q-Q plot, judged by the same standard as before: the points must follow the line across the central region with no systematic curve.
+2. If the spread of the mean scaled like 1 / sqrt(n), as the CLT predicts for a finite-variance population, the IQR would fall from its one-observation value of 2 to 2 / sqrt(n). I use 2 / sqrt(n) as the benchmark. If the IQR does not shrink, averaging is not concentrating the distribution.
+
+I report whether any tested n passes both.
+
+## 4. Simulation
+I simulated B = 50,000 sample means at each of 13 sample sizes, using the same B as for the other populations. n = 1 is included as a baseline, since the mean of one observation is just the observation, and n = 30 is included to test the common rule of thumb. I did not use run_clt() here, because it needs a finite mean and standard deviation.
+```{r}
+ns <- c(1, 2, 5, 10, 20, 30, 50, 75, 100, 125, 150, 200, 300)
+cauchy_means <- lapply(ns, function(n)
+  simulate_means(function(n) rcauchy(n), n, B = 50000))
+names(cauchy_means) <- ns
+```
+
+## 5. Evidence
+### Numerical table
+```{r}
+iqr_tab <- data.frame(
+  n         = ns,
+  q25       = sapply(cauchy_means, quantile, probs = 0.25),
+  median    = sapply(cauchy_means, median),
+  q75       = sapply(cauchy_means, quantile, probs = 0.75)
+)
+iqr_tab$iqr       <- iqr_tab$q75 - iqr_tab$q25
+iqr_tab$if_normal <- 2 / sqrt(iqr_tab$n)   # IQR if averaging worked like the CLT
+rownames(iqr_tab) <- NULL
+knitr::kable(iqr_tab, digits = 3)
+```
+### IQR Plot
+```{r}
+#| fig-height: 4
+plot(iqr_tab$n, iqr_tab$iqr, type = "b", pch = 16, log = "x",
+     ylim = c(0, 2.5), xlab = "Sample size n (log scale)",
+     ylab = "IQR of the sample means",
+     main = "Cauchy: IQR does not shrink")
+lines(iqr_tab$n, iqr_tab$if_normal, type = "b", pch = 1, col = "firebrick")
+legend("topright", legend = c("Simulated IQR", "2 / sqrt(n)"),
+       col = c("black", "firebrick"), pch = c(16, 1), lty = 1, bty = "n")
+```
+The IQR of the sample means stays near 2 at every sample size from n = 1 to n = 300 (range 1.973 to 2.014), the same as a single Cauchy observation. If averaging worked as the CLT predicts, the IQR would shrink like 2 / sqrt(n), reaching 0.2 at n = 100 and about 0.12 at n = 300. The simulated IQR does not shrink at all, so the sampling distribution of the mean is not concentrating around a center as n grows.
+### Q-Q Plots
+```{r}
+#| fig-height: 4
+for (n in c(1, 30, 300)) {
+  m <- cauchy_means[[as.character(n)]]
+  op <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+  qqnorm(m, main = paste("Q-Q vs normal: n =", n), pch = 16, cex = 0.3)
+  qqline(m, col = "firebrick", lwd = 2)
+  qqplot(qcauchy(ppoints(length(m))), m,
+         main = paste("Q-Q vs Cauchy: n =", n), pch = 16, cex = 0.3,
+         xlab = "Cauchy quantiles", ylab = "Sample quantiles",
+         xlim = c(-20, 20), ylim = c(-20, 20))
+  abline(0, 1, col = "firebrick", lwd = 2)
+  par(op)
+}
+```
+- Against a normal: at n = 1, 30, and 300 the points follow the line only near the center and shoot far above and below it in the tails (an S-shape). The departure is no smaller at n = 300 than at n = 1, so the Q-Q criterion fails at every n.
+- Against a Cauchy: the points lie on the slope-1 line at all three sample sizes, with scatter only at the extreme ends. This is consistent with the mean of n Cauchy observations being exactly Cauchy for every n.
+- The axes of the Cauchy plot are limited to +/-20 so that a handful of extreme values do not flatten the plot.
+
+## 5b. Skewness and Kurtosis
+For reference, here are the skewness and kurtosis of the simulated sample means for five different seeds at three sample sizes (B = 10,000 to keep it fast). Each column is one seed; the first row is skewness and the second is kurtosis.
+```{r}
+for (n in c(5, 30, 300)) {
+  vals <- sapply(1:5, function(s) {
+    m <- simulate_means(function(n) rcauchy(n), n, B = 10000, seed = s)
+    c(skew = skew(m), kurt = kurt(m))
+  })
+  cat("n =", n, "\n"); print(round(vals, 1))
+}
+```
+
+## 6. Comparison with theory
+The CLT's predictions for a finite-variance population are that the means center on mu and have SD sigma / sqrt(n). The Cauchy has no mu or sigma, so I compare the quantities that do exist: the median of the sample means against the population median (0), and the IQR of the sample means against what the 2 / sqrt(n) shrinkage would give.
+
+```{r}
+cmp <- data.frame(
+  n          = iqr_tab$n,
+  median     = iqr_tab$median,
+  iqr        = iqr_tab$iqr,
+  if_normal  = iqr_tab$if_normal,
+  iqr_ratio  = iqr_tab$iqr / iqr_tab$if_normal
+)
+knitr::kable(cmp, digits = 3)
+```
+
+The median of the sample means stays close to the population median of 0 at every n (all within 0.01), so the center is not the problem. The spread is. The IQR stays near 2 at every n (range 1.973 to 2.014), while the 2 / sqrt(n) benchmark falls to 0.2 at n = 100 and about 0.12 at n = 300. The ratio of the two therefore grows with n, reaching about 17 at n = 300, where for a population with finite variance it would stay near 1. The simulated means are centered correctly but are no more concentrated at n = 300 than a single observation.
+
+## 7. Conclusion
+**Smallest n at which the sampling distribution of the mean is approximately normal: none.**
+
+For the Cauchy population there is no sample size at which the sampling distribution of the mean is approximately normal. The quartiles of the sample means stay near -1, 0, and 1 for every n from 1 to 300, the same as a single Cauchy observation, whereas the quartiles of a normal sample mean would shrink like 1/sqrt(n). The Cauchy has no finite variance, so the CLT's assumptions fail, and the mean of n standard Cauchy observations is itself standard Cauchy for every n. Averaging does not help.
+
+My simulation only covers n up to 300; the claim that no n works for larger values comes from the theoretical result, not from the simulation.
+
+## 8. Surprises and limitations
+- The skewness and kurtosis of the simulated sample means can be computed but are meaningless for the Cauchy. Across five seeds at each of n = 5, 30, and 300, the skewness ranged from about -49 to +100 and the kurtosis from about 1,200 to 10,000, with no pattern of shrinking as n grew. Several values sit right at the largest value these statistics can reach with B = 10,000 means, which suggests a single extreme observation dominates each one. This is why I did not apply my skewness and kurtosis cutoffs to this population.
+- The result that the mean of n standard Cauchy observations is itself standard Cauchy comes from theory. My simulation shows it is consistent with n = 1, 30, and 300 (flat IQR, Cauchy Q-Q plots on the line), but does not prove it for all n.
+- Because the IQR does not shrink, collecting more data does not make the sample mean more precise. A different estimator, such as the sample median, would be needed to estimate the center of a Cauchy population.
+- The Q-Q plot judgment is visual, as for the other populations. Here the failure is large enough that the verdict does not depend on a close call.
