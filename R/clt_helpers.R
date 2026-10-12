@@ -41,3 +41,21 @@ run_clt <- function(rgen, ns, mu, sigma, B = 10000) {
   rownames(tab) <- NULL
   list(means = means, table = tab)
 }
+
+plot_clt <- function(means, n, mu, sigma, color = "lightblue") {
+  op <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+  on.exit(par(op))
+  
+  # Left: histogram of the sample means with the CLT-predicted normal curve
+  hist(means, breaks = 40, probability = TRUE,
+       col = color, border = "white",
+       main = paste("Sample means: n =", n),
+       xlab = "Sample mean")
+  curve(dnorm(x, mean = mu, sd = sigma / sqrt(n)),
+        add = TRUE, col = "firebrick", lwd = 2)
+  
+  # Right: normal Q-Q plot
+  qqnorm(means, main = paste("Q-Q plot: n =", n),
+         pch = 16, cex = 0.3)
+  qqline(means, col = "firebrick", lwd = 2)
+}
