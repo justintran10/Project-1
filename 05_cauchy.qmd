@@ -108,6 +108,7 @@ for (n in c(1, 30, 300)) {
 
 ## 5b. Skewness and Kurtosis
 For reference, here are the skewness and kurtosis of the simulated sample means for five different seeds at three sample sizes (B = 10,000 to keep it fast). Each column is one seed; the first row is skewness and the second is kurtosis.
+
 ```{r}
 for (n in c(5, 30, 300)) {
   vals <- sapply(1:5, function(s) {
