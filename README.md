@@ -38,8 +38,8 @@ I decided this before running any simulations. A sampling distribution is
 "approximately normal" when ALL of the following hold:
 
 1. Skewness: |skewness| < 0.2
-   Reason: well above the ~±0.011 simulation noise with B = 50,000, but strict
-   enough that a histogram no longer visibly leans to one side.
+   Reason: well above the ~±0.011 simulation noise with B = 50,000, but 
+   strict enough that a histogram no longer visibly leans to one side.
 2. Excess kurtosis: |excess kurtosis| < 0.3
    Reason: strict enough to detect heavy tails, but above the ~±0.022
    simulation noise with B = 50,000. Because excess kurtosis of the mean
