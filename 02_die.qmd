@@ -117,7 +117,7 @@ The simulated means agree with the theoretical mean of 3.5 at every sample size,
 | Excess kurtosis < 0.3 | between 2 and 5 | Theory: 1.269/n < 0.3 gives n > 4.23              |
 | SD within 2% of SE    | all tested n    |                                                   |
 | Q-Q plot (visual)     | n = 5 (mild)    | Steps follow the line; ends curl slightly inward  |
-| **All four**          | **5**           | Kurtosis decides the answer                      |
+| **All four**          | **5**           | Kurtosis decides the answer                       |
 
 The die fails only at n = 2, where the mean of two dice has a triangular shape with lighter tails than a normal (excess kurtosis -0.65). By n = 5 the kurtosis is -0.24, inside my cutoff by only about 0.06, so the pass at n = 5 is close to the edge. My grid has no n = 3 or n = 4, so I can only say the kurtosis crossing lies between 2 and 5 (theory puts it at n = 4.23). By this evidence n = 30 is more than enough for a die.
 
