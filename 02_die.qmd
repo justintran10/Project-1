@@ -106,7 +106,6 @@ plot(tab$n, tab$sd_ratio, type = "b", pch = 16, log = "x",
 abline(h = 1, col = "firebrick", lwd = 2)
 abline(h = c(0.98, 1.02), col = "gray50", lty = 2)
 ```
-
 The simulated means agree with the theoretical mean of 3.5 at every sample size, and the simulated SD of the means agrees with sqrt(35/12) / sqrt(n) within about 0.4% at every n (ratios between 0.996 and 1.003). As with the other populations, the center and spread match theory even at n = 2, where the shape is still not normal.
 
 ## 7. Conclusion
