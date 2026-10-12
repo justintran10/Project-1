@@ -1,0 +1,130 @@
+---
+title: "Six-Sided Die Population"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+source("R/clt_helpers.R")
+```
+
+## 1. The population
+```{r}
+set.seed(student_id)
+x <- sample(1:6, 10000, replace = TRUE)
+
+hist(x, breaks = seq(0.5, 6.5, by = 1), probability = TRUE,
+     col = "skyblue", border = "white",
+     main = "Population: Individual Die Rolls",
+     xlab = "Value", ylim = c(0, 0.25))
+abline(h = 1/6, col = "firebrick", lwd = 2)
+```
+
+```{r}
+data.frame(
+  quantity  = c("Mean", "SD", "Skewness", "Excess kurtosis"),
+  theory    = c(3.5, sqrt(35/12), 0, -222/175),
+  simulated = round(c(mean(x), sd(x), skew(x), kurt(x)), 3)
+)
+```
+
+The die population is discrete and uniform: each of the values 1 to 6 has probability 1/6. It is perfectly symmetric about its mean of 3.5, so its skewness is 0, and it is bounded, with no values beyond 1 and 6, so it has no tails at all. Its excess kurtosis is -222/175 = -1.269, negative because a flat distribution has lighter tails than a normal. The standard deviation is sqrt(35/12) = 1.708. The simulated values from 10,000 rolls agree closely. This population never changes during the experiment. Only the distribution of the sample means changes as n grows.
+
+## 2. Prediction
+The die is symmetric, so the skewness of the sample mean should be about 0 at every n. Its population excess kurtosis is -222/175 = -1.269, so the excess kurtosis of the mean is -1.269 / n. Requiring |kurtosis| < 0.3 gives n > 4.23, so I predict kurtosis first passes at n = 5 (predicted -0.254), though that is close to the cutoff and simulation noise (about +/-0.022) could affect it. The standard error criterion should hold at every n. Kurtosis, not skewness, is therefore the numeric criterion I expect to decide the answer. I expect the Q-Q plot to show steps at small n, because the sample means can only take values on a grid of multiples of 1/n.
+
+## 3. My criterion
+I decided on these criteria before running any simulations (see the README).
+A sampling distribution of the mean is "approximately normal" when ALL of
+the following hold:
+
+1. |skewness| < 0.2
+2. |excess kurtosis| < 0.3
+3. The normal Q-Q plot follows the line across the central region with no systematic curve. Small random departures at the extreme tails are acceptable.
+4. The simulated SD of the sample means is within 2% of the theoretical   standard error, sigma / sqrt(n) (ratio between 0.98 and 1.02).
+
+I report the smallest tested n at which this and every larger tested n pass all four criteria.
+
+## 4. Simulation
+I simulated B = 50,000 sample means at each of 12 sample sizes. I used the same grid and the same B as for the exponential so the populations can be compared directly. The grid includes n = 30 to test the common rule of thumb.
+
+```{r}
+ns  <- c(2, 5, 10, 20, 30, 50, 75, 100, 125, 150, 200, 300)
+res <- run_clt(function(n) sample(1:6, n, replace = TRUE), ns,
+               mu = 3.5, sigma = sqrt(35/12), B = 50000)
+```
+
+## 5. Evidence
+### Numerical table
+```{r}
+tab <- add_checks(res$table)
+knitr::kable(
+  tab[, c("n", "skew", "excess_kurt", "sd_ratio",
+          "skew_ok", "kurt_ok", "se_ok", "all_numeric")],
+  digits = 3
+)
+```
+
+```{r}
+smallest_n(tab)
+```
+By the numeric criteria, the smallest tested n at which this and every larger tested n pass is 5. The n = 2 row fails only the kurtosis criterion (-0.65, as predicted by -1.269 / 2); every row from n = 5 up passes all three numeric criteria.
+
+### Histograms with the normal curve
+```{r}
+#| fig-height: 4
+for (n in c(2, 5, 10, 30)) {
+  plot_clt(res$means[[as.character(n)]], n, mu = 3.5, sigma = sqrt(35/12))
+}
+```
+
+### Q-Q plots
+- n = 5: The sample means fall on a grid of multiples of 0.2, so the plot is a staircase and the histogram shows gaps (a binning artifact, not non-normality). The steps follow the line through the middle. The extreme ends curl slightly inward (light tails), which fits the negative excess kurtosis (-0.24). I judge this a pass, though a mild one.
+- n = 10: The steps follow the line with no bow through the middle. The inward curl at the extremes is weaker than at n = 5, as predicted. Pass.
+- n = 30: (describe what you see)
+
+## 6. Comparison with theory
+
+```{r}
+knitr::kable(
+  tab[, c("n", "sim_mean", "theory_mean", "sim_sd", "theory_se", "sd_ratio")],
+  digits = 4
+)
+```
+
+```{r}
+#| fig-height: 4
+plot(tab$n, tab$sd_ratio, type = "b", pch = 16, log = "x",
+     ylim = c(0.95, 1.05), xlab = "Sample size n (log scale)",
+     ylab = "Simulated SD / theoretical SE",
+     main = "Die: standard error check")
+abline(h = 1, col = "firebrick", lwd = 2)
+abline(h = c(0.98, 1.02), col = "gray50", lty = 2)
+```
+
+The simulated means agree with the theoretical mean of 3.5 at every sample size, and the simulated SD of the means agrees with sqrt(35/12) / sqrt(n) within about 0.4% at every n (ratios between 0.996 and 1.003). As with the other populations, the center and spread match theory even at n = 2, where the shape is still not normal.
+
+## 7. Conclusion
+**Smallest tested n at which the sampling distribution is approximately normal (all four criteria): n = 5.**
+
+| Criterion | First passes at | Notes |
+|---|---|---|
+| Skewness < 0.2 | all tested n | Symmetric population, skewness about 0 at every n |
+| Excess kurtosis < 0.3 | between 2 and 5 | Theory: 1.269/n < 0.3 gives n > 4.23 |
+| SD within 2% of SE | all tested n | |
+| Q-Q plot (visual) | n = 5 (mild) | Steps follow the line; ends curl slightly inward |
+| **All four** | **5** | Kurtosis decides the answer |
+
+The die fails only at n = 2, where the mean of two dice has a triangular shape with lighter tails than a normal (excess kurtosis -0.65). By n = 5 the kurtosis is -0.24, inside my cutoff by only about 0.06, so the pass at n = 5 is close to the edge. My grid has no n = 3 or n = 4, so I can only say the kurtosis crossing lies between 2 and 5 (theory puts it at n = 4.23). By this evidence n = 30 is more than enough for a die.
+
+## 8. Surprises and limitations
+- The sample means of a discrete population sit on a grid (multiples of 1/n), so the histograms show gaps and spikes at small n and the Q-Q plots are staircases. At n = 5 the histogram bars were about twice as tall as the normal curve because the bins were narrower than the grid spacing. That is a plotting artifact, so I judged shape from the Q-Q plot and the numerical summaries instead.
+- Kurtosis, not skewness, decided the numeric answer. This is the opposite of the exponential, because the die is symmetric but has light tails.
+- Light tails produce an inward curl at the ends of the Q-Q plot, the opposite direction from the exponential's outward drift.
+- The kurtosis at n = 5 (-0.24) is close to my cutoff of 0.3, and the simulation noise is about +/-0.022, so this pass is not by a wide margin.
+- My grid skips n = 3 and 4, so the crossing is only located between 2 and 5.
