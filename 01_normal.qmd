@@ -103,7 +103,6 @@ plot(tab$n, tab$sd_ratio, type = "b", pch = 16, log = "x",
 abline(h = 1, col = "firebrick", lwd = 2)
 abline(h = c(0.98, 1.02), col = "gray50", lty = 2)
 ```
-
 The simulated means are all very close to the theoretical mean of 0, and the simulated SD of the means agrees with 1 / sqrt(n) within about 0.4% at every sample size, including n = 2.
 
 ## 7. Conclusion
