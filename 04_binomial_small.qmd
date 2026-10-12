@@ -115,13 +115,13 @@ The simulated means agree with the theoretical mean of 0.5 at every sample size 
 ## 7. Conclusion
 **Smallest tested n at which the sampling distribution is approximately normal (all four criteria): n = 200.**
 
-| Criterion | First passes at | Notes |
-|---|---|---|
-| Excess kurtosis < 0.3 | about n = 4 | Theory: 1.02/n < 0.3 gives n > 3.4 |
-| Skewness < 0.2 | between 30 and 50 | Theory: n = 36 |
-| SD within 2% of SE | all tested n | |
-| Q-Q plot (visual) | about n = 200 | Drift remains at 50, 100, and 150 |
-| **All four** | **200** | Skewness sets the numeric answer, the Q-Q plot sets the final one |
+| Criterion             | First passes at   | Notes                                                            |
+|-----------------------|-------------------|------------------------------------------------------------------|
+| Excess kurtosis < 0.3 | about n = 4       | Theory: 1.02/n < 0.3 gives n > 3.4                               |
+| Skewness < 0.2        | between 30 and 50 | Theory: n = 36                                                   |
+| SD within 2% of SE    | all tested n      |                                                                  |
+| Q-Q plot (visual)     | about n = 200     | Drift remains at 50, 100, and 150                                |
+| **All four**          | **200**           | Skewness sets the numeric answer, the Q-Q plot sets the final one |
 
 The numeric criteria alone give n = 50, but the Q-Q plots still show the tails drifting from the line at 50, 100, and slightly at 150. My grid has nothing between 150 and 200, so the Q-Q threshold is only located in (150, 200]. By this evidence, n = 30 is not enough for this population.
 
