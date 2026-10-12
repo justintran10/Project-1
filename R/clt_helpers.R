@@ -13,3 +13,11 @@ kurt <- function(x) {
   m2 <- mean((x - m)^2)
   m4 / m2^2 - 3            # subtract 3 so a normal distribution scores 0
 }
+
+student_id <- 8866   # last four digits of student ID
+
+simulate_means <- function(rgen, n, B = 10000, seed = student_id) {
+  set.seed(seed)
+  replicate(B, mean(rgen(n)))
+}
+
