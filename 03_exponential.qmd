@@ -1,0 +1,133 @@
+---
+title: "Exponential Population"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+source("R/clt_helpers.R")
+```
+
+## 1. The population
+
+```{r}
+set.seed(student_id)
+x <- rexp(10000, rate = 1)
+
+hist(x, breaks = 40, probability = TRUE,
+     col = "darkorange", border = "white",
+     main = "Population: Individual Exponential Values",
+     xlab = "Individual value")
+curve(dexp(x, rate = 1), add = TRUE, col = "firebrick", lwd = 2)
+```
+
+```{r}
+data.frame(
+  quantity = c("Mean", "SD", "Skewness", "Excess kurtosis"),
+  theory   = c(1, 1, 2, 6),
+  simulated = round(c(mean(x), sd(x), skew(x), kurt(x)), 3)
+)
+```
+The exponential population is strongly right-skewed. The density is highest at 0 and falls off exponentially, so most values are small (about 63% are below 1), while a long right tail produces occasional large values. That tail pulls the mean (1) above the median (about 0.69). The theoretical mean and SD are both 1, the skewness is 2, and the excess kurtosis is 6, and the simulated values from 10,000 draws agree closely. This population never changes during the experiment. Only the distribution of the sample means changes as n grows.
+
+## 2. Prediction
+For independent, identically distributed data, the skewness of the sample mean equals the population skewness divided by sqrt(n). The exponential has skewness 2, so the skewness of the mean is 2 / sqrt(n). Requiring |skewness| < 0.2 gives n > 100, so I predict the smallest n that passes is about 101. The excess kurtosis of the mean is 6 / n, so |kurtosis| < 0.3 is met by about n = 21, which means skewness is the criterion that will decide the answer. The standard error criterion should hold at every n, apart from simulation noise. I expect the Q-Q plot to show a smooth bow (upper tail above the line) at small n that fades as n approaches 100.
+
+## 3. My criterion
+I decided on these criteria before running any simulations (see the README).
+A sampling distribution of the mean is "approximately normal" when ALL of
+the following hold:
+
+1. |skewness| < 0.2
+2. |excess kurtosis| < 0.3
+3. The normal Q-Q plot follows the line across the central region with no systematic curve. Small random departures at the extreme tails are acceptable.
+4. The simulated SD of the sample means is within 2% of the theoretical   standard error, sigma / sqrt(n) (ratio between 0.98 and 1.02).
+
+Reporting the smallest tested n at which this and every larger tested n pass all four criteria.
+
+## 4. Simulation
+I simulated B = 10,000 sample means at each of 12 sample sizes. The grid is dense near n = 100, where my prediction says skewness crosses the cutoff, and includes n = 30 to test the common rule of thumb. Values above 150 are included to confirm the criteria keep passing at larger n.
+
+```{r}
+ns  <- c(2, 5, 10, 20, 30, 50, 75, 100, 125, 150, 200, 300)
+res <- run_clt(function(n) rexp(n, rate = 1), ns, mu = 1, sigma = 1, B = 50000)
+```
+
+## 5. Evidence
+### Numerical table
+```{r}
+tab <- add_checks(res$table)
+knitr::kable(
+  tab[, c("n", "skew", "excess_kurt", "sd_ratio",
+          "skew_ok", "kurt_ok", "se_ok", "all_numeric")],
+  digits = 3
+)
+```
+
+```{r}
+smallest_n(tab)
+```
+By the numeric criteria, the smallest tested n at which this and every larger tested n pass is 100. Theory puts the exact skewness crossing at n = 101 (2/√n < 0.2), and the simulated skewness at n = 100 is within noise of the cutoff, so I report the threshold as about 100, not as a precise value.
+### Histograms with the normal curve
+```{r}
+#| fig-height: 4
+for (n in c(30, 75, 100, 200)) {
+  plot_clt(res$means[[as.character(n)]], n, mu = 1, sigma = 1)
+}
+```
+### Q-Q plots
+- n = 30: The tails drift clearly away from the line, and the drift is larger than at n = 100. This is the signature of right skew (skewness 0.34). Fails the Q-Q criterion.
+- n = 75: The tails still drift off the line. Fails.
+- n = 100: The tails drift off the line but also wiggle. The wiggle is random noise like the normal reference plot shows, but some real drift remains, so I call this borderline and treat it as a fail. The skewness at n = 100 is about 0.19, right at my cutoff, which fits what the plot shows.
+- n = 200: The tails only wiggle around the line with no steady drift, like the normal reference. Passes.
+
+The drift shrinks steadily as n increases, as expected from the skewness of the mean falling like 2 / sqrt(n). The numeric criteria pass at n = 100, but the Q-Q plot only passes by about n = 200, so the Q-Q plot was the stricter standard here.
+
+## 6. Comparison with theory
+```{r}
+knitr::kable(
+  tab[, c("n", "sim_mean", "theory_mean", "sim_sd", "theory_se", "sd_ratio")],
+  digits = 4
+)
+```
+
+```{r}
+#| fig-height: 4
+plot(tab$n, tab$sd_ratio, type = "b", pch = 16, log = "x",
+     ylim = c(0.95, 1.05), xlab = "Sample size n (log scale)",
+     ylab = "Simulated SD / theoretical SE",
+     main = "Exponential: standard error check")
+abline(h = 1, col = "firebrick", lwd = 2)
+abline(h = c(0.98, 1.02), col = "gray50", lty = 2)
+```
+The simulated means agree with the theoretical mean of 1 at every sample size (all within 0.002), and the simulated SD of the means agrees with the theoretical standard error 1 / sqrt(n) within 0.5% everywhere. This holds even at n = 2, where the sampling distribution is still strongly skewed. So the CLT's predictions about the center and spread are accurate at all n; only the shape takes a large n to become approximately normal. I used B = 50,000 simulations because at B = 10,000 one SD ratio (n = 300) missed my 2% cutoff through simulation noise alone.
+
+## 7. Conclusion
+**Smallest n at which the sampling distribution of the mean is approximately normal (all four criteria): n = 200.**
+
+| Criterion | First passes at | Notes |
+|---|---|---|
+| Excess kurtosis < 0.3 | about n = 20 | Theory: 6/n < 0.3 gives n > 20 |
+| Skewness < 0.2 | n = 100 | Theory: 2/sqrt(n) < 0.2 gives n > 100 (exactly 101) |
+| SD within 2% of SE | all tested n | With B = 50,000 |
+| Q-Q plot (visual) | about n = 200 | Tails still drift from the line at 100, 125, 150 |
+| **All four** | **200** | Skewness and the Q-Q plot decide the answer |
+
+Skewness is the numeric criterion that holds the exponential back, and it matches theory closely. The numeric criteria alone give n = 100, but at that sample size the true skewness (0.200) sits right at my cutoff, and the Q-Q plot still shows tails drifting from the line. The drift only settles to the random wiggle seen in a normal reference plot by about n = 200. Because my grid has no values between 150 and 200, the Q-Q threshold is only known to lie in (150, 200]. By this evidence, n = 30 is not enough for an exponential population: at n = 30 the skewness is about 0.34 and the Q-Q plot clearly departs from the line.
+
+## 8. Surprises and limitations
+**The numeric criteria and the Q-Q plot disagree.** 
+The three numeric criteria all pass by n = 100, but the Q-Q plot still shows the tails drifting from the line at n = 100, 125, and 150, and only looks like a normal reference by about n = 200. Skewness and kurtosis are single numbers averaged over all 50,000 means, while a Q-Q plot also shows the extreme tails, where a skewed distribution is the slowest to settle. My skewness cutoff of 0.2 was therefore a little more permissive than my Q-Q standard. This is the reason I used several kinds of evidence instead of one.
+
+**Other limitations and surprises**
+- The theoretical skewness at n = 100 is exactly 0.200, my cutoff, so whether the simulation passes there depends on noise. A different seed could flip it.
+- At B = 10,000 the SD ratio at n = 300 missed my 2% cutoff by noise alone (1.0207). I raised B to 50,000 instead of loosening the criterion, and the ratio became 1.004.
+- My grid has no values between 150 and 200, so the Q-Q threshold is only known to lie in (150, 200].
+- The Q-Q judgment is visual and subjective. I compared against a normal reference plot to keep it consistent.
+- The answer depends heavily on my cutoffs. A looser skewness cutoff of 0.5 would give about n = 16, and my stricter standard gives about 200.
+- Every simulation used the same seed, so results across different n are not independent draws.
