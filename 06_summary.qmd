@@ -15,13 +15,13 @@ I simulated B = 50,000 sample means at 12 sample sizes per population (13 for th
 
 ## Results
 
-| Population       | Numeric n | All-four n | Decided by         | Skew   | Kurt   | n = 30? | Key observation |
-|------------------|-----------|------------|--------------------|--------|--------|---------|-----------------|
-| Normal           | 2         | 2          | nothing            | -0.008 | 0.048  | Yes     | Exactly normal at every n; baseline check on my criteria |
-| Die              | 5         | 5          | kurtosis           | 0.003  | -0.241 | Yes     | Symmetric but light-tailed; only n = 2 fails |
-| Exponential      | 100       | 200        | skewness, then Q-Q | 0.137  | -0.009 | No      | Strong skew; Q-Q tails still drift at 100 to 150 |
+| Population       | Numeric n | All-four n | Decided by         | Skew   | Kurt   | n = 30? | Key observation                                             |
+|------------------|-----------|------------|--------------------|--------|--------|---------|-------------------------------------------------------------|
+| Normal           | 2         | 2          | nothing            | -0.008 | 0.048  | Yes     | Exactly normal at every n; baseline check on my criteria    |
+| Die              | 5         | 5          | kurtosis           | 0.003  | -0.241 | Yes     | Symmetric but light-tailed; only n = 2 fails                |
+| Exponential      | 100       | 200        | skewness, then Q-Q | 0.137  | -0.009 | No      | Strong skew; Q-Q tails still drift at 100 to 150            |
 | Binomial(5, 0.1) | 50        | 200        | skewness, then Q-Q | 0.090  | -0.004 | No      | Discrete and skewed; numbers pass 4x earlier than the plots |
-| Cauchy           | none      | none       | infinite variance  | n/a    | n/a    | No      | IQR stays near 2 at every n |
+| Cauchy           | none      | none       | infinite variance  | n/a    | n/a    | No      | IQR stays near 2 at every n                                 |
 
 "Numeric n" uses skewness, kurtosis, and the SD check. "All-four n" adds the Q-Q plot. Skew and Kurt are measured at the all-four n.
 
