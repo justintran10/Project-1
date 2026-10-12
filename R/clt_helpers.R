@@ -42,10 +42,27 @@ run_clt <- function(rgen, ns, mu, sigma, B = 10000) {
   list(means = means, table = tab)
 }
 
+add_checks <- function(tab) {
+  tab$skew_ok     <- abs(tab$skew) < 0.2
+  tab$kurt_ok     <- abs(tab$excess_kurt) < 0.3
+  tab$se_ok       <- tab$sd_ratio > 0.98 & tab$sd_ratio < 1.02
+  tab$all_numeric <- tab$skew_ok & tab$kurt_ok & tab$se_ok
+  tab
+}
+
+# Smallest tested n such that it AND every larger tested n pass
+smallest_n <- function(tab) {
+  ok <- tab$all_numeric
+  for (i in seq_len(nrow(tab))) {
+    if (all(ok[i:nrow(tab)])) return(tab$n[i])
+  }
+  NA
+}
+
 plot_clt <- function(means, n, mu, sigma, color = "lightblue") {
   op <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
   on.exit(par(op))
-  
+
   # Left: histogram of the sample means with the CLT-predicted normal curve
   hist(means, breaks = 40, probability = TRUE,
        col = color, border = "white",
@@ -53,7 +70,7 @@ plot_clt <- function(means, n, mu, sigma, color = "lightblue") {
        xlab = "Sample mean")
   curve(dnorm(x, mean = mu, sd = sigma / sqrt(n)),
         add = TRUE, col = "firebrick", lwd = 2)
-  
+
   # Right: normal Q-Q plot
   qqnorm(means, main = paste("Q-Q plot: n =", n),
          pch = 16, cex = 0.3)
