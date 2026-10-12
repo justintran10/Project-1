@@ -79,7 +79,7 @@ By the numeric criteria, the smallest tested n at which this and every larger te
 ### Histograms with the normal curve
 ```{r}
 #| fig-height: 4
-for (n in c(50, 100, 150, 200, 300)) {
+for (n in c(50, 100, 125, 150, 200, 300)) {
   plot_clt(res$means[[as.character(n)]], n, mu = 0.5, sigma = sqrt(0.45))
 }
 ```
@@ -87,9 +87,10 @@ for (n in c(50, 100, 150, 200, 300)) {
 ### Q-Q plots
 - n = 50: The tails drift from the line. Fails the Q-Q criterion even though all numeric criteria pass.
 - n = 100: Both ends sit above the line and the bow is visible across the plot. Fails.
+- n = 125: The upper tail lifts steadily above the line, and both ends sit above it. Fails. (The histogram is spiky because the means sit on a grid of 1/125 that does not line up with the bins; this is a plotting artifact.)
 - n = 150: Slight upper-tail drift remains. Borderline fail.
 - n = 200: The remaining lift in the upper tail looks like random wiggle, not steady drift. Passes.
-- n = 300: (describe what you see)
+- n = 300: The points follow the line through the middle. The only departures are small scatter at the extreme tails. Passes.
 
 ## 6. Comparison with theory
 
