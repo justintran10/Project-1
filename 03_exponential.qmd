@@ -48,7 +48,7 @@ the following hold:
 3. The normal Q-Q plot follows the line across the central region with no systematic curve. Small random departures at the extreme tails are acceptable.
 4. The simulated SD of the sample means is within 2% of the theoretical   standard error, sigma / sqrt(n) (ratio between 0.98 and 1.02).
 
-Reporting the smallest tested n at which this and every larger tested n pass all four criteria.
+I report the smallest tested n at which this and every larger tested n pass all four criteria.
 
 ## 4. Simulation
 I simulated B = 10,000 sample means at each of 12 sample sizes. The grid is dense near n = 100, where my prediction says skewness crosses the cutoff, and includes n = 30 to test the common rule of thumb. Values above 150 are included to confirm the criteria keep passing at larger n.
