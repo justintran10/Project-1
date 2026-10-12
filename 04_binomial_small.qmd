@@ -1,0 +1,133 @@
+---
+title: "Binomial (size = 5, p = 0.10) Population"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+source("R/clt_helpers.R")
+```
+
+## 1. The population
+```{r}
+set.seed(student_id)
+x <- rbinom(10000, size = 5, prob = 0.1)
+
+hist(x, breaks = seq(-0.5, 5.5, by = 1), probability = TRUE,
+     col = "skyblue", border = "white",
+     main = "Population: Individual Binomial(5, 0.1) Values",
+     xlab = "Value")
+points(0:5, dbinom(0:5, size = 5, prob = 0.1),
+       col = "firebrick", pch = 19, cex = 1.3)
+```
+
+```{r}
+data.frame(
+  quantity  = c("Mean", "SD", "Skewness", "Excess kurtosis"),
+  theory    = c(0.5, sqrt(0.45), 0.8 / sqrt(0.45), 0.46 / 0.45),
+  simulated = round(c(mean(x), sd(x), skew(x), kurt(x)), 3)
+)
+```
+
+The Binomial(5, 0.1) population is discrete, with possible values 0 to 5. Most of the probability sits on the smallest values: about 59% of observations are 0, 33% are 1, and 7% are 2, with a thin tail out to 5. It is strongly right-skewed (skewness 1.19) with excess kurtosis 1.02. The mean is 0.5 and the SD is sqrt(0.45) = 0.671. The simulated values from 10,000 draws agree closely. Here size = 5 is the number of trials inside each observation, which is separate from the sample size n. This population never changes during the experiment. Only the distribution of the sample means changes as n grows.
+
+## 2. Prediction
+The population skewness is 0.8 / sqrt(0.45) = 1.19, so the skewness of the sample mean is 1.19 / sqrt(n). Requiring |skewness| < 0.2 gives n > 35.4, so I predict skewness first passes at n = 36. The population excess kurtosis is 0.46 / 0.45 = 1.02, so the excess kurtosis of the mean is 1.02 / n, and |kurtosis| < 0.3 gives n > 3.4, met by n = 4. Skewness is therefore the criterion I expect to decide the answer, at about n = 36. Because my grid has n = 30 (predicted skewness 0.217, fail) and n = 50 (predicted 0.168, pass), I expect to locate the crossing between 30 and 50. The standard error criterion should hold at every n. I expect the sample means to sit on a grid of multiples of 1/n, so the Q-Q plots will be staircases at small n, with a bow from the right skew.
+
+## 3. My criterion
+I decided on these criteria before running any simulations (see the README).
+A sampling distribution of the mean is "approximately normal" when ALL of
+the following hold:
+
+1. |skewness| < 0.2
+2. |excess kurtosis| < 0.3
+3. The normal Q-Q plot follows the line across the central region with no systematic curve. Small random departures at the extreme tails are acceptable.
+4. The simulated SD of the sample means is within 2% of the theoretical standard error, sigma / sqrt(n) (ratio between 0.98 and 1.02).
+
+I report the smallest tested n at which this and every larger tested n pass all four criteria.
+
+## 4. Simulation
+I simulated B = 50,000 sample means at each of 12 sample sizes. I used the same grid and the same B as for the exponential so the populations can be compared directly. The grid includes n = 30 to test the common rule of thumb.
+
+```{r}
+ns  <- c(2, 5, 10, 20, 30, 50, 75, 100, 125, 150, 200, 300)
+res <- run_clt(function(n) rbinom(n, size = 5, prob = 0.1), ns,
+               mu = 0.5, sigma = sqrt(0.45), B = 50000)
+```
+
+## 5. Evidence
+### Numerical table
+```{r}
+tab <- add_checks(res$table)
+knitr::kable(
+  tab[, c("n", "skew", "excess_kurt", "sd_ratio",
+          "skew_ok", "kurt_ok", "se_ok", "all_numeric")],
+  digits = 3
+)
+```
+
+```{r}
+smallest_n(tab)
+```
+By the numeric criteria, the smallest tested n at which this and every larger tested n pass is 50. Theory puts the skewness crossing at n = 36 (1.19 / sqrt(n) < 0.2); my grid has n = 30 (fails) and n = 50 (passes), so the crossing is only located between 30 and 50. Kurtosis (1.02 / n) is met by n = 4, so skewness decides the numeric answer.
+
+### Histograms with the normal curve
+```{r}
+#| fig-height: 4
+for (n in c(50, 100, 150, 200, 300)) {
+  plot_clt(res$means[[as.character(n)]], n, mu = 0.5, sigma = sqrt(0.45))
+}
+```
+
+### Q-Q plots
+- n = 50: The tails drift from the line. Fails the Q-Q criterion even though all numeric criteria pass.
+- n = 100: Both ends sit above the line and the bow is visible across the plot. Fails.
+- n = 150: Slight upper-tail drift remains. Borderline fail.
+- n = 200: The remaining lift in the upper tail looks like random wiggle, not steady drift. Passes.
+- n = 300: (describe what you see)
+
+## 6. Comparison with theory
+
+```{r}
+knitr::kable(
+  tab[, c("n", "sim_mean", "theory_mean", "sim_sd", "theory_se", "sd_ratio")],
+  digits = 4
+)
+```
+
+```{r}
+#| fig-height: 4
+plot(tab$n, tab$sd_ratio, type = "b", pch = 16, log = "x",
+     ylim = c(0.95, 1.05), xlab = "Sample size n (log scale)",
+     ylab = "Simulated SD / theoretical SE",
+     main = "Binomial: standard error check")
+abline(h = 1, col = "firebrick", lwd = 2)
+abline(h = c(0.98, 1.02), col = "gray50", lty = 2)
+```
+
+The simulated means agree with the theoretical mean of 0.5 at every sample size (all within 0.002), and the simulated SD of the means agrees with sqrt(0.45) / sqrt(n) at every n (ratios between 0.995 and 1.007). As with the other populations, the center and spread match theory even at small n, where the shape is still far from normal.
+
+## 7. Conclusion
+**Smallest tested n at which the sampling distribution is approximately normal (all four criteria): n = 200.**
+
+| Criterion | First passes at | Notes |
+|---|---|---|
+| Excess kurtosis < 0.3 | about n = 4 | Theory: 1.02/n < 0.3 gives n > 3.4 |
+| Skewness < 0.2 | between 30 and 50 | Theory: n = 36 |
+| SD within 2% of SE | all tested n | |
+| Q-Q plot (visual) | about n = 200 | Drift remains at 50, 100, and 150 |
+| **All four** | **200** | Skewness sets the numeric answer, the Q-Q plot sets the final one |
+
+The numeric criteria alone give n = 50, but the Q-Q plots still show the tails drifting from the line at 50, 100, and slightly at 150. My grid has nothing between 150 and 200, so the Q-Q threshold is only located in (150, 200]. By this evidence, n = 30 is not enough for this population.
+
+## 8. Surprises and limitations
+- The numeric criteria (n = 50) and the Q-Q plot (n = 200) disagree by a factor of 4, as for the exponential. Single-number summaries pass before the tails have settled.
+- The Q-Q appearance does not follow skewness alone: at n = 100 the predicted skewness (0.12) is below the exponential's value at n = 150 (0.16), yet the binomial still drifts. Discreteness may play a part, but I did not test that.
+- The visual judgment is subjective, and my verdict at 150 ("slight drift") and 200 ("wiggle") is close to the boundary.
+- The sample means sit on a grid of multiples of 1/n, so the Q-Q plots are staircases.
+- Remember size = 5 is the binomial's number of trials, and n is the number of observations averaged. They are different quantities.
